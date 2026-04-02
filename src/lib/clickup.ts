@@ -4,7 +4,7 @@ const BASE = "https://api.clickup.com/api/v2";
 
 function headers(): HeadersInit {
   return {
-    Authorization: process.env.CLICKUP_API_TOKEN!,
+    Authorization: process.env.CLICKUP_API_KEY!,
     "Content-Type": "application/json",
   };
 }
