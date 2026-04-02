@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { twiml } from "@/lib/twilio";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   return handleComplete(req);
 }

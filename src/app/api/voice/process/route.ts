@@ -10,6 +10,8 @@ import {
 } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   const tasks = req.nextUrl.searchParams.get("tasks") || "";
   const index = parseInt(req.nextUrl.searchParams.get("index") || "0");

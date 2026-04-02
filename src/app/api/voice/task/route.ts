@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { getTask } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   return handleTask(req);
 }

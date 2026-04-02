@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchCaptureTasks } from "@/lib/clickup";
 import { initiateCall } from "@/lib/twilio";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const tasks = await fetchCaptureTasks();

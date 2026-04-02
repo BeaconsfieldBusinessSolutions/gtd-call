@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { generateSpeech } from "@/lib/elevenlabs";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const text = req.nextUrl.searchParams.get("text");
   if (!text) {
