@@ -4,3 +4,4 @@ export const PHONE_TO = process.env.YOUR_PHONE_NUMBER || "+447792031683";
 export const PHONE_FROM = process.env.TWILIO_PHONE_NUMBER || "+15187503004";
 export const ELEVENLABS_VOICE_ID = "QMSGabqYzk8YAneQYYvR"; // Natalie
 export const ELEVENLABS_MODEL_ID = "eleven_flash_v2_5";
+export const CLICKUP_CALL_LOG_LIST_ID = process.env.CLICKUP_CALL_LOG_LIST_ID || "901817135522";

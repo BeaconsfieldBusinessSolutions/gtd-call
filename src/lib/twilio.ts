@@ -13,7 +13,7 @@ export async function initiateCall(baseUrl: string, taskIds: string[]): Promise<
     from: PHONE_FROM,
     url: `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasksParam)}&index=0`,
     record: true,
-    statusCallback: `${baseUrl}/api/voice/status`,
+    statusCallback: `${baseUrl}/api/voice/status?tasks=${encodeURIComponent(tasksParam)}`,
     statusCallbackEvent: ["completed"],
   });
   return call.sid;

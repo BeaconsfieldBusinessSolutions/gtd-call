@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { deleteTask } from "@/lib/clickup";
+import { deleteTask, logInteraction } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
 import { speech } from "@/lib/speech";
 
@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData();
   const speechResult = (formData.get("SpeechResult") as string) || "";
+  const callSid = (formData.get("CallSid") as string) || "";
   const lower = speechResult.toLowerCase().trim();
 
   console.log(`[DELETE-CONFIRM] Task: ${taskId} | Speech: "${speechResult}"`);
@@ -23,6 +24,11 @@ export async function POST(req: NextRequest) {
   if (confirmed) {
     try {
       await deleteTask(taskId);
+      await logInteraction(taskId, {
+        callSid, taskName: taskId, speechResult: `delete confirmed: "${speechResult}"`,
+        action: "delete", actionDetails: "(confirmed)",
+        outcome: "success", confirmation: "Task deleted.",
+      });
       return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   ${speech(baseUrl, "Task deleted.")}
@@ -37,6 +43,12 @@ export async function POST(req: NextRequest) {
 </Response>`);
     }
   }
+
+  await logInteraction(taskId, {
+    callSid, taskName: taskId, speechResult: `delete cancelled: "${speechResult}"`,
+    action: "delete", actionDetails: "(cancelled by user)",
+    outcome: "skipped", confirmation: "User declined delete.",
+  });
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>

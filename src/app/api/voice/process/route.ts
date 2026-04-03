@@ -7,6 +7,7 @@ import {
   deleteTask,
   closeTask,
   getTask,
+  logInteraction,
 } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
 import { speech } from "@/lib/speech";
@@ -20,9 +21,10 @@ export async function POST(req: NextRequest) {
   const baseUrl = `https://${req.headers.get("host")}`;
   const nextUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index + 1}`;
 
-  // Parse Twilio's form body to get speech result
+  // Parse Twilio's form body
   const formData = await req.formData();
   const speechResult = (formData.get("SpeechResult") as string) || "";
+  const callSid = (formData.get("CallSid") as string) || "";
 
   if (!speechResult) {
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
@@ -59,21 +61,34 @@ export async function POST(req: NextRequest) {
 
   // Execute the action
   let confirmation = "";
+  let outcome: "success" | "error" | "skipped" = "success";
+  let actionDetails = "";
+
   try {
     switch (action.action) {
       case "rename":
+        actionDetails = `(newTitle: "${action.newTitle}")`;
         await renameTask(taskId, action.newTitle!);
         confirmation = `Renamed to: ${action.newTitle}`;
         break;
       case "add_notes":
+        actionDetails = `(notes: "${action.notes}")`;
         await addNotes(taskId, action.notes!);
         confirmation = "Notes added.";
         break;
       case "schedule":
+        actionDetails = `(dueDate: ${action.dueDate})`;
         await scheduleTask(taskId, action.dueDate!);
         confirmation = `Scheduled for ${action.dueDate} and moved to Next Actions.`;
         break;
-      case "do_it_now":
+      case "do_it_now": {
+        outcome = "skipped";
+        confirmation = "User doing it now (5 min pause)";
+        await logInteraction(taskId, {
+          callSid, taskName, speechResult,
+          action: action.action, actionDetails: "",
+          outcome, confirmation,
+        });
         return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   ${speech(baseUrl, "Go ahead. Take up to 5 minutes. Press any key or speak when you're done.")}
@@ -82,7 +97,16 @@ export async function POST(req: NextRequest) {
   </Gather>
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
+      }
       case "delete": {
+        actionDetails = "(awaiting confirmation)";
+        outcome = "skipped";
+        confirmation = "Redirected to delete confirmation";
+        await logInteraction(taskId, {
+          callSid, taskName, speechResult,
+          action: action.action, actionDetails,
+          outcome, confirmation,
+        });
         const confirmUrl = `${baseUrl}/api/voice/confirm-delete?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}`;
         return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -100,12 +124,24 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error(`ClickUp action ${action.action} failed:`, err);
-    confirmation = "Sorry, there was an error performing that action. Moving on.";
+    outcome = "error";
+    confirmation = "Error performing action: " + (err instanceof Error ? err.message : String(err));
   }
+
+  // Log the interaction to ClickUp
+  await logInteraction(taskId, {
+    callSid, taskName, speechResult,
+    action: action.action, actionDetails,
+    outcome, confirmation,
+  });
+
+  const spokenConfirmation = outcome === "error"
+    ? "Sorry, there was an error performing that action. Moving on."
+    : confirmation;
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${speech(baseUrl, confirmation)}
+  ${speech(baseUrl, spokenConfirmation)}
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
 }
