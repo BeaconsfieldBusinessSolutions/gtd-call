@@ -91,6 +91,19 @@ export async function closeTask(taskId: string): Promise<void> {
   if (!res.ok) throw new Error(`ClickUp close failed: ${res.status}`);
 }
 
+export async function getTaskComments(taskId: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${BASE}/task/${taskId}/comment`, {
+      headers: headers(),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.comments || []).map((c: { comment_text: string }) => c.comment_text);
+  } catch {
+    return [];
+  }
+}
+
 export async function getTask(taskId: string): Promise<ClickUpTask> {
   const res = await fetch(`${BASE}/task/${taskId}`, {
     headers: headers(),
