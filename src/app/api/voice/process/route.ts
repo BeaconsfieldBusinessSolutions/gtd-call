@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!speechResult) {
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice" language="en-GB">I didn't hear anything. Moving to the next task.</Say>
+  <Say voice="Polly.Amy" language="en-GB">I didn't hear anything. Moving to the next task.</Say>
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
   }
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     console.error("Claude classification failed:", err);
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice" language="en-GB">Sorry, I couldn't understand that. Moving to the next task.</Say>
+  <Say voice="Polly.Amy" language="en-GB">Sorry, I couldn't understand that. Moving to the next task.</Say>
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
   }
@@ -70,17 +70,15 @@ export async function POST(req: NextRequest) {
         await scheduleTask(taskId, action.dueDate!);
         confirmation = `Scheduled for ${action.dueDate} and moved to Next Actions.`;
         break;
-      case "do_it_now": {
-        const doItTtsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent("Go ahead. Take up to 5 minutes. Press any key or speak when you're done.")}`;
+      case "do_it_now":
         return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Play>${doItTtsUrl}</Play>
+  <Say voice="Polly.Amy" language="en-GB">Go ahead. Take up to 5 minutes. Press any key or speak when you're done.</Say>
   <Gather input="speech dtmf" action="${nextUrl}" timeout="300" speechTimeout="3">
     <Pause length="300"/>
   </Gather>
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
-      }
       case "delete":
         await deleteTask(taskId);
         confirmation = "Task deleted.";
@@ -92,14 +90,16 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error(`ClickUp action ${action.action} failed:`, err);
-    confirmation = `Sorry, there was an error performing that action. Moving on.`;
+    confirmation = "Sorry, there was an error performing that action. Moving on.";
   }
-
-  const confirmTtsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent(confirmation)}`;
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Play>${confirmTtsUrl}</Play>
+  <Say voice="Polly.Amy" language="en-GB">${escapeXml(confirmation)}</Say>
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
+}
+
+function escapeXml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

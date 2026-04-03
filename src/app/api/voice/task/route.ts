@@ -48,14 +48,17 @@ async function handleTask(req: NextRequest) {
 
   const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&index=${index}&taskId=${taskId}`;
   const retryUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&index=${index}`;
-  const ttsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent(prompt)}`;
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="${processUrl}" speechTimeout="3" language="en-GB">
-    <Play>${ttsUrl}</Play>
+    <Say voice="Polly.Amy" language="en-GB">${escapeXml(prompt)}</Say>
   </Gather>
-  <Say voice="alice" language="en-GB">I didn't catch that. Let me repeat.</Say>
+  <Say voice="Polly.Amy" language="en-GB">I didn't catch that. Let me repeat.</Say>
   <Redirect>${retryUrl}</Redirect>
 </Response>`);
+}
+
+function escapeXml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
