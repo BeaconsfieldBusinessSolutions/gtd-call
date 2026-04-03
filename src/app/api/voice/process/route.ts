@@ -42,9 +42,11 @@ export async function POST(req: NextRequest) {
 
   // Classify speech with Claude
   const today = new Date().toISOString().split("T")[0];
+  console.log(`[CLARIFY] Task: "${taskName}" | Speech: "${speechResult}" | Today: ${today}`);
   let action;
   try {
     action = await classifySpeech(taskName, speechResult, today);
+    console.log(`[CLARIFY] Action: ${JSON.stringify(action)}`);
   } catch (err) {
     console.error("Claude classification failed:", err);
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>

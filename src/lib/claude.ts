@@ -15,10 +15,20 @@ The user will tell you a task name, and then give you their verbal response abou
 
 1. **rename** — They want to change the task title. Extract the new title.
 2. **add_notes** — They want to add context or notes to the task. Extract the notes.
-3. **schedule** — They want to schedule it for a specific date. Extract the date in YYYY-MM-DD format. If they say "tomorrow", "next week", "Monday", etc., calculate the actual date based on today's date which will be provided.
+3. **schedule** — They want to schedule it for a specific date. Extract the date in YYYY-MM-DD format. IMPORTANT: Today's date will be provided. Use it to calculate relative dates:
+   - "tomorrow" = today + 1 day
+   - "next week" / "next Monday" = calculate from today
+   - "April" or "next month" with no specific day = use the 1st of that month
+   - "April 10th" = use that exact date
+   - "in 3 days" = today + 3 days
+   - ALWAYS use the CURRENT year (provided) or next year if the month has already passed
 4. **do_it_now** — They want to do this task right now (takes less than 2 minutes). They might say "I'll do it now", "let me do this now", "do it", etc.
 5. **delete** — They want to remove/trash this task. They might say "delete it", "trash it", "bin it", "get rid of it", etc.
 6. **close** — They want to mark it as done/complete. They might say "it's done", "already done", "completed", "close it", etc.
+
+IMPORTANT: Speech-to-text may mishear words. Common confusions:
+- "April" might be heard as "a pro" or "a pearl" or similar
+- Use context to determine the most likely intended meaning
 
 Respond with ONLY a JSON object, no other text. Examples:
 {"action":"rename","newTitle":"Buy organic milk from farm shop"}
@@ -40,7 +50,7 @@ export async function classifySpeech(
     messages: [
       {
         role: "user",
-        content: `Today's date is ${todayDate}.\n\nTask: "${taskName}"\n\nUser's response: "${speechText}"`,
+        content: `Today's date is ${todayDate}. The current year is ${todayDate.split("-")[0]}. The current month is ${todayDate.split("-")[1]}.\n\nTask: "${taskName}"\n\nUser's response: "${speechText}"`,
       },
     ],
   });
