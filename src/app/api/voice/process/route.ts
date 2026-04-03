@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const index = parseInt(req.nextUrl.searchParams.get("index") || "0");
   const taskId = req.nextUrl.searchParams.get("taskId") || "";
   const baseUrl = `https://${req.headers.get("host")}`;
-  const nextUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&index=${index + 1}`;
+  const nextUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index + 1}`;
 
   // Parse Twilio's form body to get speech result
   const formData = await req.formData();

@@ -46,8 +46,8 @@ async function handleTask(req: NextRequest) {
   const total = taskIds.length;
   const prompt = `Task ${position} of ${total}. ${taskName}. What would you like to do with this?`;
 
-  const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&index=${index}&taskId=${taskId}`;
-  const retryUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&index=${index}`;
+  const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}`;
+  const retryUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index}`;
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
