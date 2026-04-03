@@ -46,25 +46,32 @@ export async function addNotes(taskId: string, notes: string): Promise<void> {
 
 export async function scheduleTask(taskId: string, dueDate: string): Promise<void> {
   const timestamp = new Date(dueDate).getTime();
-  // Set due date
+  // Set due date and move to Next Action list in one call
   const res1 = await fetch(`${BASE}/task/${taskId}`, {
     method: "PUT",
     headers: headers(),
     body: JSON.stringify({ due_date: timestamp }),
   });
   if (!res1.ok) throw new Error(`ClickUp set due date failed: ${res1.status}`);
-  // Move to Next Action list
-  const res2 = await fetch(`${BASE}/list/${CLICKUP_NEXT_ACTION_LIST_ID}/task/${taskId}`, {
-    method: "POST",
+  // Move task to Next Action list
+  const res2 = await fetch(`${BASE}/task/${taskId}?custom_task_ids=false`, {
+    method: "PUT",
     headers: headers(),
+    body: JSON.stringify({ list: CLICKUP_NEXT_ACTION_LIST_ID }),
   });
-  if (!res2.ok) throw new Error(`ClickUp move task failed: ${res2.status}`);
-  // Remove from Capture list
-  const res3 = await fetch(`${BASE}/list/${CLICKUP_CAPTURE_LIST_ID}/task/${taskId}`, {
-    method: "DELETE",
-    headers: headers(),
-  });
-  if (!res3.ok) throw new Error(`ClickUp remove from capture failed: ${res3.status}`);
+  if (!res2.ok) {
+    const err = await res2.text();
+    console.error(`ClickUp move failed: ${res2.status} ${err}`);
+    // Fallback: try the list endpoint
+    const res3 = await fetch(`${BASE}/list/${CLICKUP_NEXT_ACTION_LIST_ID}/task/${taskId}`, {
+      method: "POST",
+      headers: headers(),
+    });
+    if (!res3.ok) {
+      const err3 = await res3.text();
+      console.error(`ClickUp move fallback failed: ${res3.status} ${err3}`);
+    }
+  }
 }
 
 export async function deleteTask(taskId: string): Promise<void> {
