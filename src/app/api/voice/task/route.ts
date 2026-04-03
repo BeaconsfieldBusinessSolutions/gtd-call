@@ -1,12 +1,8 @@
 import { NextRequest } from "next/server";
 import { getTask } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
-import { isElevenLabsAvailable } from "@/lib/elevenlabs";
 
 export const dynamic = "force-dynamic";
-
-let elevenLabsChecked = false;
-let useElevenLabs = false;
 
 export async function POST(req: NextRequest) {
   return handleTask(req);
@@ -21,13 +17,6 @@ async function handleTask(req: NextRequest) {
   const index = parseInt(req.nextUrl.searchParams.get("index") || "0");
   const taskIds = tasks.split(",").filter(Boolean);
   const baseUrl = `https://${req.headers.get("host")}`;
-
-  // Check ElevenLabs availability once per cold start
-  if (!elevenLabsChecked) {
-    useElevenLabs = await isElevenLabsAvailable();
-    elevenLabsChecked = true;
-    console.log(`[TTS] ElevenLabs available: ${useElevenLabs}`);
-  }
 
   // All tasks processed
   if (index >= taskIds.length) {
@@ -57,20 +46,12 @@ async function handleTask(req: NextRequest) {
   const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}`;
   const retryUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index}`;
 
-  const speechContent = useElevenLabs
-    ? `<Play>${baseUrl}/api/tts?text=${encodeURIComponent(prompt)}</Play>`
-    : `<Say voice="Polly.Amy" language="en-GB">${escapeXml(prompt)}</Say>`;
-
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="${processUrl}" speechTimeout="3" language="en-GB">
-    ${speechContent}
+    <Play>${baseUrl}/api/tts?text=${encodeURIComponent(prompt)}</Play>
   </Gather>
   <Say voice="Polly.Amy" language="en-GB">I didn't catch that. Let me repeat.</Say>
   <Redirect>${retryUrl}</Redirect>
 </Response>`);
-}
-
-function escapeXml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

@@ -9,18 +9,11 @@ import {
   getTask,
 } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
-import { isElevenLabsAvailable } from "@/lib/elevenlabs";
 
 export const dynamic = "force-dynamic";
 
-let elevenLabsChecked = false;
-let useElevenLabs = false;
-
 function sayOrPlay(baseUrl: string, text: string): string {
-  if (useElevenLabs) {
-    return `<Play>${baseUrl}/api/tts?text=${encodeURIComponent(text)}</Play>`;
-  }
-  return `<Say voice="Polly.Amy" language="en-GB">${escapeXml(text)}</Say>`;
+  return `<Play>${baseUrl}/api/tts?text=${encodeURIComponent(text)}</Play>`;
 }
 
 export async function POST(req: NextRequest) {
@@ -29,11 +22,6 @@ export async function POST(req: NextRequest) {
   const taskId = req.nextUrl.searchParams.get("taskId") || "";
   const baseUrl = `https://${req.headers.get("host")}`;
   const nextUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index + 1}`;
-
-  if (!elevenLabsChecked) {
-    useElevenLabs = await isElevenLabsAvailable();
-    elevenLabsChecked = true;
-  }
 
   // Parse Twilio's form body to get speech result
   const formData = await req.formData();
@@ -116,8 +104,4 @@ export async function POST(req: NextRequest) {
   ${sayOrPlay(baseUrl, confirmation)}
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
-}
-
-function escapeXml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
