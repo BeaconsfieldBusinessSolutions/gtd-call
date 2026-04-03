@@ -71,20 +71,25 @@ async function handleTask(req: NextRequest) {
   const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}`;
   const retryUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index}`;
 
-  // Build the prompt with greeting for first task, transitions for rest
-  let fullPrompt: string;
-  if (index === 0) {
+  // First task: show greeting and wait for user to acknowledge before reading task
+  if (index === 0 && !req.nextUrl.searchParams.get("greeted")) {
     const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)](total);
-    const taskIntro = getTransition(position, total, taskName);
-    fullPrompt = `${greeting} ${taskIntro}`;
-  } else {
-    fullPrompt = getTransition(position, total, taskName);
+    const greetedUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=0&amp;greeted=1`;
+    return twiml(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech" action="${greetedUrl}" speechTimeout="auto" language="en-GB">
+    ${speech(baseUrl, `${greeting} Ready?`)}
+  </Gather>
+  <Redirect>${greetedUrl}</Redirect>
+</Response>`);
   }
+
+  const prompt = getTransition(position, total, taskName);
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="${processUrl}" speechTimeout="auto" language="en-GB">
-    ${speech(baseUrl, fullPrompt)}
+    ${speech(baseUrl, prompt)}
   </Gather>
   <Say voice="Polly.Amy" language="en-GB">I didn't catch that. Let me repeat.</Say>
   <Redirect>${retryUrl}</Redirect>
