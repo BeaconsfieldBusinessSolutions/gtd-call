@@ -9,8 +9,19 @@ import {
   getTask,
 } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
+import { isElevenLabsAvailable } from "@/lib/elevenlabs";
 
 export const dynamic = "force-dynamic";
+
+let elevenLabsChecked = false;
+let useElevenLabs = false;
+
+function sayOrPlay(baseUrl: string, text: string): string {
+  if (useElevenLabs) {
+    return `<Play>${baseUrl}/api/tts?text=${encodeURIComponent(text)}</Play>`;
+  }
+  return `<Say voice="Polly.Amy" language="en-GB">${escapeXml(text)}</Say>`;
+}
 
 export async function POST(req: NextRequest) {
   const tasks = req.nextUrl.searchParams.get("tasks") || "";
@@ -19,15 +30,19 @@ export async function POST(req: NextRequest) {
   const baseUrl = `https://${req.headers.get("host")}`;
   const nextUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index + 1}`;
 
+  if (!elevenLabsChecked) {
+    useElevenLabs = await isElevenLabsAvailable();
+    elevenLabsChecked = true;
+  }
+
   // Parse Twilio's form body to get speech result
   const formData = await req.formData();
   const speechResult = (formData.get("SpeechResult") as string) || "";
 
   if (!speechResult) {
-    const ttsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent("I didn't hear anything. Moving to the next task.")}`;
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Play>${ttsUrl}</Play>
+  ${sayOrPlay(baseUrl, "I didn't hear anything. Moving to the next task.")}
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
   }
@@ -50,10 +65,9 @@ export async function POST(req: NextRequest) {
     console.log(`[CLARIFY] Action: ${JSON.stringify(action)}`);
   } catch (err) {
     console.error("Claude classification failed:", err);
-    const ttsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent("Sorry, I couldn't understand that. Moving to the next task.")}`;
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Play>${ttsUrl}</Play>
+  ${sayOrPlay(baseUrl, "Sorry, I couldn't understand that. Moving to the next task.")}
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
   }
@@ -74,17 +88,15 @@ export async function POST(req: NextRequest) {
         await scheduleTask(taskId, action.dueDate!);
         confirmation = `Scheduled for ${action.dueDate} and moved to Next Actions.`;
         break;
-      case "do_it_now": {
-        const doItTtsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent("Go ahead. Take up to 5 minutes. Press any key or speak when you're done.")}`;
+      case "do_it_now":
         return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Play>${doItTtsUrl}</Play>
+  ${sayOrPlay(baseUrl, "Go ahead. Take up to 5 minutes. Press any key or speak when you're done.")}
   <Gather input="speech dtmf" action="${nextUrl}" timeout="300" speechTimeout="3">
     <Pause length="300"/>
   </Gather>
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
-      }
       case "delete":
         await deleteTask(taskId);
         confirmation = "Task deleted.";
@@ -99,11 +111,13 @@ export async function POST(req: NextRequest) {
     confirmation = "Sorry, there was an error performing that action. Moving on.";
   }
 
-  const confirmTtsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent(confirmation)}`;
-
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Play>${confirmTtsUrl}</Play>
+  ${sayOrPlay(baseUrl, confirmation)}
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
+}
+
+function escapeXml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

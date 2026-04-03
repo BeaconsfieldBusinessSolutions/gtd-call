@@ -18,9 +18,11 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("TTS error:", err);
+    console.error("TTS error, will fall back to Twilio Say:", err);
+    // Return a minimal valid audio response (silence) so Twilio doesn't error
+    // The caller should handle this by checking content-type
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "TTS failed" }),
+      JSON.stringify({ error: "tts_failed", fallback: true }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
