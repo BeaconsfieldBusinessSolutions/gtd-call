@@ -9,12 +9,9 @@ import {
   getTask,
 } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
+import { speech } from "@/lib/speech";
 
 export const dynamic = "force-dynamic";
-
-function sayOrPlay(baseUrl: string, text: string): string {
-  return `<Play>${baseUrl}/api/tts?text=${encodeURIComponent(text)}</Play>`;
-}
 
 export async function POST(req: NextRequest) {
   const tasks = req.nextUrl.searchParams.get("tasks") || "";
@@ -30,7 +27,7 @@ export async function POST(req: NextRequest) {
   if (!speechResult) {
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${sayOrPlay(baseUrl, "I didn't hear anything. Moving to the next task.")}
+  ${await speech(baseUrl, "I didn't hear anything. Moving to the next task.")}
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
   }
@@ -55,7 +52,7 @@ export async function POST(req: NextRequest) {
     console.error("Claude classification failed:", err);
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${sayOrPlay(baseUrl, "Sorry, I couldn't understand that. Moving to the next task.")}
+  ${await speech(baseUrl, "Sorry, I couldn't understand that. Moving to the next task.")}
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
   }
@@ -79,7 +76,7 @@ export async function POST(req: NextRequest) {
       case "do_it_now":
         return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${sayOrPlay(baseUrl, "Go ahead. Take up to 5 minutes. Press any key or speak when you're done.")}
+  ${await speech(baseUrl, "Go ahead. Take up to 5 minutes. Press any key or speak when you're done.")}
   <Gather input="speech dtmf" action="${nextUrl}" timeout="300" speechTimeout="3">
     <Pause length="300"/>
   </Gather>
@@ -101,7 +98,7 @@ export async function POST(req: NextRequest) {
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${sayOrPlay(baseUrl, confirmation)}
+  ${await speech(baseUrl, confirmation)}
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
 }

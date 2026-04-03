@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getTask } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
+import { speech } from "@/lib/speech";
 
 export const dynamic = "force-dynamic";
 
@@ -46,10 +47,12 @@ async function handleTask(req: NextRequest) {
   const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}`;
   const retryUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index}`;
 
+  const speechContent = await speech(baseUrl, prompt);
+
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="${processUrl}" speechTimeout="3" language="en-GB">
-    <Play>${baseUrl}/api/tts?text=${encodeURIComponent(prompt)}</Play>
+    ${speechContent}
   </Gather>
   <Say voice="Polly.Amy" language="en-GB">I didn't catch that. Let me repeat.</Say>
   <Redirect>${retryUrl}</Redirect>

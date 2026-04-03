@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { twiml } from "@/lib/twilio";
+import { speech } from "@/lib/speech";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ async function handleComplete(req: NextRequest) {
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Play>${baseUrl}/api/tts?text=${encodeURIComponent(message)}</Play>
+  ${await speech(baseUrl, message)}
   <Hangup/>
 </Response>`);
 }
