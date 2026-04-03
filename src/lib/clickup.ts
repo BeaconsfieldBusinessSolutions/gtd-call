@@ -46,31 +46,29 @@ export async function addNotes(taskId: string, notes: string): Promise<void> {
 
 export async function scheduleTask(taskId: string, dueDate: string): Promise<void> {
   const timestamp = new Date(dueDate).getTime();
-  // Set due date and move to Next Action list in one call
+  // Set due date
   const res1 = await fetch(`${BASE}/task/${taskId}`, {
     method: "PUT",
     headers: headers(),
     body: JSON.stringify({ due_date: timestamp }),
   });
   if (!res1.ok) throw new Error(`ClickUp set due date failed: ${res1.status}`);
-  // Move task to Next Action list
-  const res2 = await fetch(`${BASE}/task/${taskId}?custom_task_ids=false`, {
-    method: "PUT",
-    headers: headers(),
-    body: JSON.stringify({ list: CLICKUP_NEXT_ACTION_LIST_ID }),
-  });
-  if (!res2.ok) {
-    const err = await res2.text();
-    console.error(`ClickUp move failed: ${res2.status} ${err}`);
-    // Fallback: try the list endpoint
-    const res3 = await fetch(`${BASE}/list/${CLICKUP_NEXT_ACTION_LIST_ID}/task/${taskId}`, {
-      method: "POST",
+  // Move task to Next Action list using v3 API
+  await moveTask(taskId, CLICKUP_NEXT_ACTION_LIST_ID);
+}
+
+export async function moveTask(taskId: string, listId: string): Promise<void> {
+  const workspaceId = process.env.CLICKUP_WORKSPACE_ID || "9018702708";
+  const res = await fetch(
+    `https://api.clickup.com/api/v3/workspaces/${workspaceId}/tasks/${taskId}/home_list/${listId}`,
+    {
+      method: "PUT",
       headers: headers(),
-    });
-    if (!res3.ok) {
-      const err3 = await res3.text();
-      console.error(`ClickUp move fallback failed: ${res3.status} ${err3}`);
     }
+  );
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`ClickUp move task failed: ${res.status} ${err}`);
   }
 }
 
