@@ -82,10 +82,17 @@ export async function POST(req: NextRequest) {
   </Gather>
   <Redirect>${nextUrl}</Redirect>
 </Response>`);
-      case "delete":
-        await deleteTask(taskId);
-        confirmation = "Task deleted.";
-        break;
+      case "delete": {
+        const confirmUrl = `${baseUrl}/api/voice/confirm-delete?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}`;
+        return twiml(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech" action="${confirmUrl}" speechTimeout="3" language="en-GB">
+    ${speech(baseUrl, `Are you sure you want to delete ${taskName}? Say yes to confirm or no to skip.`)}
+  </Gather>
+  ${speech(baseUrl, "I didn't hear a response. Skipping delete and moving on.")}
+  <Redirect>${nextUrl}</Redirect>
+</Response>`);
+      }
       case "close":
         await closeTask(taskId);
         confirmation = "Task marked as complete.";
