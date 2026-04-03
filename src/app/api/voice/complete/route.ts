@@ -11,10 +11,13 @@ export async function GET(req: NextRequest) {
   return handleComplete(req);
 }
 
-async function handleComplete(_req: NextRequest) {
+async function handleComplete(req: NextRequest) {
+  const baseUrl = `https://${req.headers.get("host")}`;
+  const ttsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent("All tasks have been clarified. Great work. Goodbye.")}`;
+
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Amy" language="en-GB">All tasks have been clarified. Great work. Goodbye.</Say>
+  <Play>${ttsUrl}</Play>
   <Hangup/>
 </Response>`);
 }

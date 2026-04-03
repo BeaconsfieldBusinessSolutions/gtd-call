@@ -35,7 +35,6 @@ async function handleTask(req: NextRequest) {
     const task = await getTask(taskId);
     taskName = task.name;
   } catch {
-    // Task may have been deleted — skip to next
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Redirect>${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index + 1}</Redirect>
@@ -48,17 +47,14 @@ async function handleTask(req: NextRequest) {
 
   const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}`;
   const retryUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index}`;
+  const ttsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent(prompt)}`;
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="${processUrl}" speechTimeout="3" language="en-GB">
-    <Say voice="Polly.Amy" language="en-GB">${escapeXml(prompt)}</Say>
+    <Play>${ttsUrl}</Play>
   </Gather>
   <Say voice="Polly.Amy" language="en-GB">I didn't catch that. Let me repeat.</Say>
   <Redirect>${retryUrl}</Redirect>
 </Response>`);
-}
-
-function escapeXml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
