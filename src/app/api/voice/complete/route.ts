@@ -27,10 +27,12 @@ async function handleComplete(req: NextRequest) {
   const signOff = SIGN_OFFS[Math.floor(Math.random() * SIGN_OFFS.length)](total);
   const farewellUrl = `${baseUrl}/api/voice/farewell`;
 
+  // Play sign-off first, then wait for user to say goodbye
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
+  ${speech(baseUrl, signOff)}
   <Gather input="speech" action="${farewellUrl}" timeout="10" speechTimeout="3" language="en-GB">
-    ${speech(baseUrl, signOff)}
+    <Pause length="10"/>
   </Gather>
   <Hangup/>
 </Response>`);
