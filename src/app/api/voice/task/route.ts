@@ -47,7 +47,7 @@ async function handleTask(req: NextRequest) {
   const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}`;
   const retryUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index}`;
 
-  const speechContent = await speech(baseUrl, prompt);
+  const speechContent = speech(baseUrl, prompt);
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>

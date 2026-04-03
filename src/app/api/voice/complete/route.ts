@@ -19,7 +19,7 @@ async function handleComplete(req: NextRequest) {
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${await speech(baseUrl, message)}
+  ${speech(baseUrl, message)}
   <Hangup/>
 </Response>`);
 }
