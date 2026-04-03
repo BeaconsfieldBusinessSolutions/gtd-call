@@ -13,7 +13,7 @@ const GREETINGS = [
   (n: number) => `Hey! Clarify time. ${n} task${n === 1 ? "" : "s"} to work through, let's go.`,
 ];
 
-function getTransition(position: number, total: number, taskName: string): string {
+export function getTransition(position: number, total: number, taskName: string): string {
   if (position === 1) {
     return `Here's the first one. ${taskName}. What would you like to do with this?`;
   }
@@ -79,7 +79,7 @@ async function handleTask(req: NextRequest) {
 
   const position = index + 1;
   const total = taskIds.length;
-  const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}`;
+  const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}&amp;taskName=${encodeURIComponent(taskName)}`;
   const retryUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index}`;
 
   // First task: show greeting and wait for user to acknowledge before reading task
