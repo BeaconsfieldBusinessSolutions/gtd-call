@@ -9,12 +9,19 @@ export async function GET(req: NextRequest) {
     return new Response("Missing text param", { status: 400 });
   }
 
-  const audioBuffer = await generateSpeech(text);
-
-  return new Response(audioBuffer, {
-    headers: {
-      "Content-Type": "audio/basic",
-      "Cache-Control": "public, max-age=3600",
-    },
-  });
+  try {
+    const audioBuffer = await generateSpeech(text);
+    return new Response(audioBuffer, {
+      headers: {
+        "Content-Type": "audio/basic",
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
+  } catch (err) {
+    console.error("TTS error:", err);
+    return new Response(
+      JSON.stringify({ error: err instanceof Error ? err.message : "TTS failed" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }
