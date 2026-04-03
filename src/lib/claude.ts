@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 const client = new Anthropic();
 
 export interface ClarifyAction {
-  action: "rename" | "add_notes" | "schedule" | "do_it_now" | "delete" | "close";
+  action: "rename" | "add_notes" | "schedule" | "do_it_now" | "delete" | "close" | "unclear";
   newTitle?: string;
   notes?: string;
   dueDate?: string;
@@ -25,10 +25,19 @@ The user will tell you a task name, and then give you their verbal response abou
 4. **do_it_now** — They want to do this task right now (takes less than 2 minutes). They might say "I'll do it now", "let me do this now", "do it", etc.
 5. **delete** — They want to remove/trash this task. They might say "delete it", "trash it", "bin it", "get rid of it", etc.
 6. **close** — They want to mark it as done/complete. They might say "it's done", "already done", "completed", "close it", etc.
+7. **unclear** — The speech is too garbled, fragmented, or nonsensical to confidently determine intent. Use this when:
+   - Speech is just filler words or fragments like "if to", "the", "um", "a"
+   - You cannot determine which of the 6 actions above was intended
+   - The speech contains contradictory instructions
+   - Less than 2 meaningful words related to an action
 
-IMPORTANT: Speech-to-text may mishear words. Common confusions:
-- "April" might be heard as "a pro" or "a pearl" or similar
-- Use context to determine the most likely intended meaning
+CRITICAL RULES:
+- Do NOT guess an action from unclear speech fragments. If in doubt, return "unclear".
+- Speech-to-text may mishear words. Common confusions:
+  - "April" might be heard as "a pro" or "a pearl"
+  - "schedule" might be heard as "schedule" or "skedule"
+  - Use context to determine the most likely intended meaning
+- Only classify as an action when you are confident the user's intent is clear.
 
 Respond with ONLY a JSON object, no other text. Examples:
 {"action":"rename","newTitle":"Buy organic milk from farm shop"}
@@ -36,7 +45,8 @@ Respond with ONLY a JSON object, no other text. Examples:
 {"action":"schedule","dueDate":"2026-04-05"}
 {"action":"do_it_now"}
 {"action":"delete"}
-{"action":"close"}`;
+{"action":"close"}
+{"action":"unclear"}`;
 
 export async function classifySpeech(
   taskName: string,

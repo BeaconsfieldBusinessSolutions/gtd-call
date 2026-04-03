@@ -5,6 +5,31 @@ import { speech } from "@/lib/speech";
 
 export const dynamic = "force-dynamic";
 
+const GREETINGS = [
+  (n: number) => `Hey there! Let's clarify your inbox. You've got ${n} task${n === 1 ? "" : "s"} to go through.`,
+  (n: number) => `Good evening! Time to clear your capture list. ${n} task${n === 1 ? "" : "s"} waiting.`,
+  (n: number) => `Hi! Ready for your clarify session? ${n} task${n === 1 ? "" : "s"} on the list tonight.`,
+  (n: number) => `Evening! Let's get your inbox to zero. ${n} item${n === 1 ? "" : "s"} to process.`,
+  (n: number) => `Hey! Clarify time. ${n} task${n === 1 ? "" : "s"} to work through, let's go.`,
+];
+
+function getTransition(position: number, total: number, taskName: string): string {
+  if (position === 1) {
+    return `Here's the first one. ${taskName}. What would you like to do with this?`;
+  }
+  if (position === total) {
+    return `Last one! Task ${position} of ${total}. ${taskName}. What shall we do?`;
+  }
+
+  const transitions = [
+    `Next up. Task ${position} of ${total}. ${taskName}. What would you like to do?`,
+    `Moving on. Task ${position} of ${total}. ${taskName}. What's the plan for this one?`,
+    `OK, task ${position} of ${total}. ${taskName}. What do you want to do with this?`,
+    `Right, task ${position} of ${total}. ${taskName}. What would you like to do?`,
+  ];
+  return transitions[(position - 1) % transitions.length];
+}
+
 export async function POST(req: NextRequest) {
   return handleTask(req);
 }
@@ -23,7 +48,7 @@ async function handleTask(req: NextRequest) {
   if (index >= taskIds.length) {
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Redirect>${baseUrl}/api/voice/complete</Redirect>
+  <Redirect>${baseUrl}/api/voice/complete?total=${taskIds.length}</Redirect>
 </Response>`);
   }
 
@@ -43,16 +68,23 @@ async function handleTask(req: NextRequest) {
 
   const position = index + 1;
   const total = taskIds.length;
-  const prompt = `Task ${position} of ${total}. ${taskName}. What would you like to do with this?`;
   const processUrl = `${baseUrl}/api/voice/process?tasks=${encodeURIComponent(tasks)}&amp;index=${index}&amp;taskId=${taskId}`;
   const retryUrl = `${baseUrl}/api/voice/task?tasks=${encodeURIComponent(tasks)}&amp;index=${index}`;
 
-  const speechContent = speech(baseUrl, prompt);
+  // Build the prompt with greeting for first task, transitions for rest
+  let fullPrompt: string;
+  if (index === 0) {
+    const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)](total);
+    const taskIntro = getTransition(position, total, taskName);
+    fullPrompt = `${greeting} ${taskIntro}`;
+  } else {
+    fullPrompt = getTransition(position, total, taskName);
+  }
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather input="speech" action="${processUrl}" speechTimeout="3" language="en-GB">
-    ${speechContent}
+  <Gather input="speech" action="${processUrl}" speechTimeout="auto" language="en-GB">
+    ${speech(baseUrl, fullPrompt)}
   </Gather>
   <Say voice="Polly.Amy" language="en-GB">I didn't catch that. Let me repeat.</Say>
   <Redirect>${retryUrl}</Redirect>
