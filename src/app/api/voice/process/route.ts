@@ -18,6 +18,18 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function naturalDate(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  const day = d.getDate();
+  const suffix = day === 1 || day === 21 || day === 31 ? "st"
+    : day === 2 || day === 22 ? "nd"
+    : day === 3 || day === 23 ? "rd"
+    : "th";
+  const month = d.toLocaleString("en-GB", { month: "long" });
+  const year = d.getFullYear();
+  return `${day}${suffix} of ${month} ${year}`;
+}
+
 export async function POST(req: NextRequest) {
   const tasks = req.nextUrl.searchParams.get("tasks") || "";
   const index = parseInt(req.nextUrl.searchParams.get("index") || "0");
@@ -106,15 +118,17 @@ export async function POST(req: NextRequest) {
         await addNotes(taskId, action.notes!);
         confirmation = pick(["Notes added.", "Got it, notes saved.", "Added those notes."]);
         break;
-      case "schedule":
+      case "schedule": {
         actionDetails = `(dueDate: ${action.dueDate})`;
         await scheduleTask(taskId, action.dueDate!);
+        const friendly = naturalDate(action.dueDate!);
         confirmation = pick([
-          `Got it, scheduled for ${action.dueDate}.`,
-          `Done, that's in your Next Actions for ${action.dueDate}.`,
-          `Scheduled for ${action.dueDate} and moved to Next Actions.`,
+          `Got it, scheduled for the ${friendly}.`,
+          `Done, that's in your Next Actions for the ${friendly}.`,
+          `Scheduled for the ${friendly} and moved to Next Actions.`,
         ]);
         break;
+      }
       case "do_it_now": {
         outcome = "skipped";
         confirmation = "User doing it now (5 min pause)";
