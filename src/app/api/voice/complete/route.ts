@@ -6,9 +6,9 @@ export const dynamic = "force-dynamic";
 
 const SIGN_OFFS = [
   (n: number) => `All done! ${n} task${n === 1 ? "" : "s"} clarified. Have a great evening.`,
-  (n: number) => `That's everything! ${n} task${n === 1 ? "" : "s"} processed. Your capture list is clear. Well done.`,
+  (n: number) => `That's everything! ${n} task${n === 1 ? "" : "s"} processed. Your capture list is looking much better.`,
   (_n: number) => `Inbox zero! Great session. See you tomorrow.`,
-  (n: number) => `All ${n} task${n === 1 ? "" : "s"} clarified. Nice work tonight. Catch you later.`,
+  (n: number) => `All ${n} task${n === 1 ? "" : "s"} sorted. Nice work tonight.`,
   (_n: number) => `Done and dusted! Enjoy your evening.`,
 ];
 
@@ -25,10 +25,13 @@ async function handleComplete(req: NextRequest) {
   const total = parseInt(req.nextUrl.searchParams.get("total") || "0");
 
   const signOff = SIGN_OFFS[Math.floor(Math.random() * SIGN_OFFS.length)](total);
+  const farewellUrl = `${baseUrl}/api/voice/farewell`;
 
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${speech(baseUrl, signOff)}
+  <Gather input="speech" action="${farewellUrl}" timeout="10" speechTimeout="3" language="en-GB">
+    ${speech(baseUrl, signOff)}
+  </Gather>
   <Hangup/>
 </Response>`);
 }
