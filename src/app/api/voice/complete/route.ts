@@ -5,11 +5,11 @@ import { speech } from "@/lib/speech";
 export const dynamic = "force-dynamic";
 
 const SIGN_OFFS = [
-  (n: number) => `All done! ${n} task${n === 1 ? "" : "s"} clarified. Have a great evening.`,
-  (n: number) => `That's everything! ${n} task${n === 1 ? "" : "s"} processed. Your capture list is looking much better.`,
-  (_n: number) => `Inbox zero! Great session. See you tomorrow.`,
-  (n: number) => `All ${n} task${n === 1 ? "" : "s"} sorted. Nice work tonight.`,
-  (_n: number) => `Done and dusted! Enjoy your evening.`,
+  (n: number) => `All done! ${n} task${n === 1 ? "" : "s"} clarified. Have a great evening!`,
+  (n: number) => `That's everything! ${n} task${n === 1 ? "" : "s"} processed. Your capture list is looking much better!`,
+  (_n: number) => `Inbox zero! Great session. See you tomorrow!`,
+  (n: number) => `All ${n} task${n === 1 ? "" : "s"} sorted. Nice work tonight!`,
+  (_n: number) => `Done and dusted! Enjoy your evening!`,
 ];
 
 export async function POST(req: NextRequest) {
@@ -27,13 +27,13 @@ async function handleComplete(req: NextRequest) {
   const signOff = SIGN_OFFS[Math.floor(Math.random() * SIGN_OFFS.length)](total);
   const farewellUrl = `${baseUrl}/api/voice/farewell`;
 
-  // Play sign-off first, then wait for user to say goodbye
+  // Sign-off inside Gather so Twilio listens for goodbye after playing it
   return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${speech(baseUrl, signOff)}
-  <Gather input="speech" action="${farewellUrl}" timeout="10" speechTimeout="3" language="en-GB">
-    <Pause length="10"/>
+  <Gather input="speech" action="${farewellUrl}" timeout="10" speechTimeout="auto" language="en-GB">
+    ${speech(baseUrl, signOff)}
   </Gather>
+  <Say voice="Polly.Amy" language="en-GB">Goodbye!</Say>
   <Hangup/>
 </Response>`);
 }
