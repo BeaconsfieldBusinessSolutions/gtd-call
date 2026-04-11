@@ -18,11 +18,13 @@ export interface ClickUpTask {
 }
 
 export async function fetchCaptureTasks(): Promise<ClickUpTask[]> {
-  const res = await fetch(`${BASE}/list/${CLICKUP_CAPTURE_LIST_ID}/task?archived=false`, {
+  console.log(`[CLICKUP] Fetching tasks from list: ${CLICKUP_CAPTURE_LIST_ID}`);
+  const res = await fetch(`${BASE}/list/${CLICKUP_CAPTURE_LIST_ID}/task?archived=false&subtasks=false`, {
     headers: headers(),
   });
   if (!res.ok) throw new Error(`ClickUp fetch tasks failed: ${res.status}`);
   const data = await res.json();
+  console.log(`[CLICKUP] Found ${data.tasks.length} tasks`);
   return data.tasks;
 }
 
