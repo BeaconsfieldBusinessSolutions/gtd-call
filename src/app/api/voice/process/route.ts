@@ -91,8 +91,8 @@ export async function POST(req: NextRequest) {
   if (action.action === "conversation" || action.action === "unclear") {
     const newHistory: ConversationTurn[] = [
       ...history,
-      { role: "user", text: speechResult },
-      { role: "assistant", text: spoken },
+      { role: "user" as const, text: speechResult },
+      { role: "assistant" as const, text: spoken },
     ].slice(-6);
 
     await logInteraction(taskId, {
