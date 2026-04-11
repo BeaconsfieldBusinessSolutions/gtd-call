@@ -11,7 +11,7 @@ import {
 } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
 import { speech } from "@/lib/speech";
-import { getTransition } from "@/app/api/voice/task/route";
+import { getTransition } from "@/lib/speech";
 
 export const dynamic = "force-dynamic";
 const MAX_CONVERSATION_TURNS = 5;
