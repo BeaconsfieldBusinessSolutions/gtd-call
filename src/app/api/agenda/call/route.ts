@@ -6,11 +6,11 @@ import { speech } from "@/lib/speech";
 export const dynamic = "force-dynamic";
 
 const GREETINGS = [
-  (n: number) => `Good morning! You've got ${n} task${n === 1 ? "" : "s"} on your agenda today.`,
-  (n: number) => `Morning! Here's what's on your plate today. ${n} item${n === 1 ? "" : "s"}.`,
-  (n: number) => `Rise and shine! Let's run through today's agenda. ${n} task${n === 1 ? "" : "s"} lined up.`,
-  (n: number) => `Good morning! ${n} thing${n === 1 ? "" : "s"} on the list today. Here we go.`,
-  (n: number) => `Morning! Time for your daily briefing. ${n} task${n === 1 ? "" : "s"} today.`,
+  (n: number) => `Good morning! You've got ${n} task${n === 1 ? "" : "s"} on your agenda today. Ready to hear them?`,
+  (n: number) => `Morning! ${n} item${n === 1 ? "" : "s"} on your plate today. Shall I run through them?`,
+  (n: number) => `Rise and shine! ${n} task${n === 1 ? "" : "s"} lined up for today. Want me to go through them?`,
+  (n: number) => `Good morning! Time for your daily briefing. ${n} task${n === 1 ? "" : "s"} today. Ready?`,
+  (n: number) => `Morning! Let's run through your agenda. ${n} thing${n === 1 ? "" : "s"} today. Shall we?`,
 ];
 
 const SIGN_OFFS = [
@@ -32,12 +32,24 @@ export async function GET(req: NextRequest) {
 async function handleAgendaCall(req: NextRequest) {
   const tasks = req.nextUrl.searchParams.get("tasks") || "";
   const taskIds = tasks.split(",").filter(Boolean);
+  const greeted = req.nextUrl.searchParams.get("greeted");
   const baseUrl = `https://${req.headers.get("host")}`;
 
-  const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)](taskIds.length);
-  const signOff = SIGN_OFFS[Math.floor(Math.random() * SIGN_OFFS.length)];
+  // Step 1: Greet and wait for response
+  if (!greeted) {
+    const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)](taskIds.length);
+    const readyUrl = `${baseUrl}/api/agenda/call?tasks=${encodeURIComponent(tasks)}&greeted=1`;
 
-  // Fetch task names from ClickUp
+    return twiml(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech" action="${readyUrl}" speechTimeout="auto" language="en-GB">
+    ${speech(baseUrl, greeting)}
+  </Gather>
+  <Redirect>${readyUrl}</Redirect>
+</Response>`);
+  }
+
+  // Step 2: Read out all tasks then hang up
   const taskLines: string[] = [];
   for (let i = 0; i < taskIds.length; i++) {
     try {
@@ -48,9 +60,9 @@ async function handleAgendaCall(req: NextRequest) {
     }
   }
 
-  // Build TwiML with one <Play> per segment
+  const signOff = SIGN_OFFS[Math.floor(Math.random() * SIGN_OFFS.length)];
+
   const plays = [
-    speech(baseUrl, greeting),
     ...taskLines.map((line) => speech(baseUrl, line)),
     speech(baseUrl, signOff),
   ].join("\n  ");
