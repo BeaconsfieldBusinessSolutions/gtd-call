@@ -17,6 +17,34 @@ export interface ClickUpTask {
   due_date: string | null;
 }
 
+export async function fetchTodayAgendaTasks(): Promise<ClickUpTask[]> {
+  // Get today's date range in UK timezone
+  const now = new Date();
+  const ukDate = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+  // ukDate = "DD/MM/YYYY" → parse to YYYY-MM-DD
+  const [day, month, year] = ukDate.split("/");
+  const startOfDay = new Date(`${year}-${month}-${day}T00:00:00+00:00`).getTime();
+  const endOfDay = new Date(`${year}-${month}-${day}T23:59:59+00:00`).getTime();
+
+  const params = new URLSearchParams({
+    archived: "false",
+    due_date_gt: String(startOfDay - 1),
+    due_date_lt: String(endOfDay + 1),
+  });
+
+  const res = await fetch(`${BASE}/list/${CLICKUP_NEXT_ACTION_LIST_ID}/task?${params}`, {
+    headers: headers(),
+  });
+  if (!res.ok) throw new Error(`ClickUp fetch agenda tasks failed: ${res.status}`);
+  const data = await res.json();
+  return data.tasks;
+}
+
 export async function fetchCaptureTasks(): Promise<ClickUpTask[]> {
   console.log(`[CLICKUP] Fetching tasks from list: ${CLICKUP_CAPTURE_LIST_ID}`);
   const res = await fetch(`${BASE}/list/${CLICKUP_CAPTURE_LIST_ID}/task?archived=false&subtasks=false`, {

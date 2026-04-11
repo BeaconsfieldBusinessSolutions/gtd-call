@@ -19,6 +19,17 @@ export async function initiateCall(baseUrl: string, taskIds: string[]): Promise<
   return call.sid;
 }
 
+export async function initiateAgendaCall(baseUrl: string, taskIds: string[]): Promise<string> {
+  const client = getTwilioClient();
+  const tasksParam = taskIds.join(",");
+  const call = await client.calls.create({
+    to: PHONE_TO,
+    from: PHONE_FROM,
+    url: `${baseUrl}/api/agenda/call?tasks=${encodeURIComponent(tasksParam)}`,
+  });
+  return call.sid;
+}
+
 export function twiml(content: string): Response {
   return new Response(content, {
     headers: { "Content-Type": "text/xml" },
