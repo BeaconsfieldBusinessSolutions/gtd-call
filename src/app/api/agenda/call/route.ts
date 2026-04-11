@@ -38,7 +38,7 @@ async function handleAgendaCall(req: NextRequest) {
   // Step 1: Greet and wait for response
   if (!greeted) {
     const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)](taskIds.length);
-    const readyUrl = `${baseUrl}/api/agenda/call?tasks=${encodeURIComponent(tasks)}&greeted=1`;
+    const readyUrl = `${baseUrl}/api/agenda/call?tasks=${encodeURIComponent(tasks)}&amp;greeted=1`;
 
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
