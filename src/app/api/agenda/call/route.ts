@@ -5,11 +5,11 @@ import { speech } from "@/lib/speech";
 export const dynamic = "force-dynamic";
 
 const GREETINGS = [
-  (n: number) => `Good morning! You've got ${n} task${n === 1 ? "" : "s"} on your agenda today. Ready to hear them?`,
-  (n: number) => `Morning! ${n} item${n === 1 ? "" : "s"} on your plate today. Shall I run through them?`,
-  (n: number) => `Rise and shine! ${n} task${n === 1 ? "" : "s"} lined up for today. Want me to go through them?`,
-  (n: number) => `Good morning! Time for your daily briefing. ${n} task${n === 1 ? "" : "s"} today. Ready?`,
-  (n: number) => `Morning! Let's run through your agenda. ${n} thing${n === 1 ? "" : "s"} today. Shall we?`,
+  (n: number) => `Good morning Seth! You've got ${n} task${n === 1 ? "" : "s"} on your agenda today. Ready to hear them?`,
+  (n: number) => `Morning Seth! ${n} item${n === 1 ? "" : "s"} on your plate today. Shall I run through them?`,
+  (n: number) => `Rise and shine Seth! ${n} task${n === 1 ? "" : "s"} lined up for today. Want me to go through them?`,
+  (n: number) => `Good morning Seth! Time for your daily briefing. ${n} task${n === 1 ? "" : "s"} today. Ready?`,
+  (n: number) => `Morning Seth! Let's run through your agenda. ${n} thing${n === 1 ? "" : "s"} today. Shall we?`,
 ];
 
 const SIGN_OFFS = [
@@ -21,10 +21,10 @@ const SIGN_OFFS = [
 ];
 
 const EMPTY_MESSAGES = [
-  "Good morning! Nothing on your ClickUp agenda today. Enjoy the free day!",
-  "Morning! Your agenda is completely clear today. Nice one!",
-  "Rise and shine! No tasks on your plate today. Make the most of it!",
-  "Good morning! Nothing scheduled for today. Have a lovely day!",
+  "Good morning Seth! Nothing on your ClickUp agenda today. Enjoy the free day!",
+  "Morning Seth! Your agenda is completely clear today. Nice one!",
+  "Rise and shine Seth! No tasks on your plate today. Make the most of it!",
+  "Good morning Seth! Nothing scheduled for today. Have a lovely day!",
 ];
 
 export async function POST(req: NextRequest) {
