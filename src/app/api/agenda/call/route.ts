@@ -69,7 +69,7 @@ async function handleAgendaCall(req: NextRequest) {
   const signOff = SIGN_OFFS[Math.floor(Math.random() * SIGN_OFFS.length)];
 
   const plays = [
-    ...taskNames.map((name, i) => speech(baseUrl, `Number ${i + 1}. ${name}.`)),
+    ...taskNames.map((name, i) => `${speech(baseUrl, `Number ${i + 1}. ${name}.`)}\n  <Pause length="2"/>`),
     speech(baseUrl, signOff),
   ].join("\n  ");
 
