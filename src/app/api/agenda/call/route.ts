@@ -35,18 +35,29 @@ export async function GET(req: NextRequest) {
   return handleAgendaCall(req);
 }
 
+function getUkDate(): string {
+  const now = new Date();
+  return now.toLocaleDateString("en-GB", {
+    timeZone: "Europe/London",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
 async function handleAgendaCall(req: NextRequest) {
   const namesParam = req.nextUrl.searchParams.get("names") || "";
   const taskNames = namesParam ? namesParam.split("||") : [];
   const greeted = req.nextUrl.searchParams.get("greeted");
   const baseUrl = `https://${req.headers.get("host")}`;
+  const todayStr = getUkDate(); // e.g. "Saturday 12 April"
 
   // No tasks today — short call
   if (taskNames.length === 0) {
     const msg = EMPTY_MESSAGES[Math.floor(Math.random() * EMPTY_MESSAGES.length)];
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${speech(baseUrl, msg)}
+  ${speech(baseUrl, `It's ${todayStr}. ${msg}`)}
   <Hangup/>
 </Response>`);
   }
@@ -54,12 +65,13 @@ async function handleAgendaCall(req: NextRequest) {
   // Step 1: Greet and wait for response
   if (!greeted) {
     const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)](taskNames.length);
+    const fullGreeting = `It's ${todayStr}. ${greeting}`;
     const readyUrl = `${baseUrl}/api/agenda/call?names=${encodeURIComponent(namesParam)}&amp;greeted=1`;
 
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="${readyUrl}" speechTimeout="auto" language="en-GB">
-    ${speech(baseUrl, greeting)}
+    ${speech(baseUrl, fullGreeting)}
   </Gather>
   <Redirect>${readyUrl}</Redirect>
 </Response>`);
