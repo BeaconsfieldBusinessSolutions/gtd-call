@@ -11,13 +11,9 @@ export async function GET(req: NextRequest) {
   }
 
   const tasks = await fetchTodayAgendaTasks();
-  if (tasks.length === 0) {
-    return NextResponse.json({ skipped: true, reason: "No tasks due today" });
-  }
-
   const baseUrl = `https://${req.headers.get("host")}`;
-  const taskIds = tasks.map((t) => t.id);
-  const callSid = await initiateAgendaCall(baseUrl, taskIds);
+  const taskNames = tasks.map((t) => t.name);
+  const callSid = await initiateAgendaCall(baseUrl, taskNames);
 
   return NextResponse.json({
     success: true,

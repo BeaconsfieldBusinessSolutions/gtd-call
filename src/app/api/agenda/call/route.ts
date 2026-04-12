@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { getTask } from "@/lib/clickup";
 import { twiml } from "@/lib/twilio";
 import { speech } from "@/lib/speech";
 
@@ -21,6 +20,13 @@ const SIGN_OFFS = [
   "That's today's agenda. Off you go!",
 ];
 
+const EMPTY_MESSAGES = [
+  "Good morning! Nothing on your ClickUp agenda today. Enjoy the free day!",
+  "Morning! Your agenda is completely clear today. Nice one!",
+  "Rise and shine! No tasks on your plate today. Make the most of it!",
+  "Good morning! Nothing scheduled for today. Have a lovely day!",
+];
+
 export async function POST(req: NextRequest) {
   return handleAgendaCall(req);
 }
@@ -30,15 +36,25 @@ export async function GET(req: NextRequest) {
 }
 
 async function handleAgendaCall(req: NextRequest) {
-  const tasks = req.nextUrl.searchParams.get("tasks") || "";
-  const taskIds = tasks.split(",").filter(Boolean);
+  const namesParam = req.nextUrl.searchParams.get("names") || "";
+  const taskNames = namesParam ? namesParam.split("||") : [];
   const greeted = req.nextUrl.searchParams.get("greeted");
   const baseUrl = `https://${req.headers.get("host")}`;
 
+  // No tasks today — short call
+  if (taskNames.length === 0) {
+    const msg = EMPTY_MESSAGES[Math.floor(Math.random() * EMPTY_MESSAGES.length)];
+    return twiml(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  ${speech(baseUrl, msg)}
+  <Hangup/>
+</Response>`);
+  }
+
   // Step 1: Greet and wait for response
   if (!greeted) {
-    const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)](taskIds.length);
-    const readyUrl = `${baseUrl}/api/agenda/call?tasks=${encodeURIComponent(tasks)}&amp;greeted=1`;
+    const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)](taskNames.length);
+    const readyUrl = `${baseUrl}/api/agenda/call?names=${encodeURIComponent(namesParam)}&amp;greeted=1`;
 
     return twiml(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -50,20 +66,10 @@ async function handleAgendaCall(req: NextRequest) {
   }
 
   // Step 2: Read out all tasks then hang up
-  const taskLines: string[] = [];
-  for (let i = 0; i < taskIds.length; i++) {
-    try {
-      const task = await getTask(taskIds[i]);
-      taskLines.push(`Number ${i + 1}. ${task.name}.`);
-    } catch {
-      taskLines.push(`Number ${i + 1}. Couldn't fetch this task.`);
-    }
-  }
-
   const signOff = SIGN_OFFS[Math.floor(Math.random() * SIGN_OFFS.length)];
 
   const plays = [
-    ...taskLines.map((line) => speech(baseUrl, line)),
+    ...taskNames.map((name, i) => speech(baseUrl, `Number ${i + 1}. ${name}.`)),
     speech(baseUrl, signOff),
   ].join("\n  ");
 

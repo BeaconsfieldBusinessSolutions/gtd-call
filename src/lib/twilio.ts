@@ -19,13 +19,13 @@ export async function initiateCall(baseUrl: string, taskIds: string[]): Promise<
   return call.sid;
 }
 
-export async function initiateAgendaCall(baseUrl: string, taskIds: string[]): Promise<string> {
+export async function initiateAgendaCall(baseUrl: string, taskNames: string[]): Promise<string> {
   const client = getTwilioClient();
-  const tasksParam = taskIds.join(",");
+  const namesParam = taskNames.join("||");
   const call = await client.calls.create({
     to: PHONE_TO,
     from: PHONE_FROM,
-    url: `${baseUrl}/api/agenda/call?tasks=${encodeURIComponent(tasksParam)}`,
+    url: `${baseUrl}/api/agenda/call?names=${encodeURIComponent(namesParam)}`,
   });
   return call.sid;
 }
