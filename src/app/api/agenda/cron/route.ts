@@ -10,8 +10,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const tasks = await fetchTodayAgendaTasks();
+  // Warm up serverless functions before the call
   const baseUrl = `https://${req.headers.get("host")}`;
+  await fetch(`${baseUrl}/api/tts?text=warmup`).catch(() => {});
+
+  const tasks = await fetchTodayAgendaTasks();
   const taskNames = tasks.map((t) => t.name);
   const callSid = await initiateAgendaCall(baseUrl, taskNames);
 

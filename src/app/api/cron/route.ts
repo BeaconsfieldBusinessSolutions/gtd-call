@@ -11,14 +11,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fetch tasks from ClickUp capture list
+  // Warm up serverless functions before the call
+  const baseUrl = `https://${req.headers.get("host")}`;
+  await fetch(`${baseUrl}/api/tts?text=warmup`).catch(() => {});
+
+  // Fetch tasks from ClickUp capture list (also warms up ClickUp connection)
   const tasks = await fetchCaptureTasks();
   if (tasks.length === 0) {
     return NextResponse.json({ skipped: true, reason: "No tasks to clarify" });
   }
-
-  // Get base URL for webhooks
-  const baseUrl = `https://${req.headers.get("host")}`;
 
   // Initiate Twilio call
   const taskIds = tasks.map((t) => t.id);
