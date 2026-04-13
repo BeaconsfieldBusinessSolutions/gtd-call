@@ -10,11 +10,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Warm up the actual serverless functions Twilio will call back into
+  // Warm up serverless functions Twilio will call back into
   const baseUrl = `https://${req.headers.get("host")}`;
   await Promise.all([
+    fetch(`${baseUrl}/api/warmup`).catch(() => {}),
     fetch(`${baseUrl}/api/tts?text=warmup`).catch(() => {}),
-    fetch(`${baseUrl}/api/agenda/call?names=warmup`).catch(() => {}),
   ]);
 
   const tasks = await fetchTodayAgendaTasks();
