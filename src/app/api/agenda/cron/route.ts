@@ -5,8 +5,10 @@ import { initiateAgendaCall } from "@/lib/twilio";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  // Verify secret (supports Bearer header from Vercel or query param from external cron)
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const querySecret = req.nextUrl.searchParams.get("secret");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && querySecret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
