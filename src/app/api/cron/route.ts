@@ -11,9 +11,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Warm up serverless functions before the call
+  // Warm up the actual serverless functions Twilio will call back into
   const baseUrl = `https://${req.headers.get("host")}`;
-  await fetch(`${baseUrl}/api/tts?text=warmup`).catch(() => {});
+  await Promise.all([
+    fetch(`${baseUrl}/api/tts?text=warmup`).catch(() => {}),
+    fetch(`${baseUrl}/api/voice/task?tasks=warmup&index=0`).catch(() => {}),
+  ]);
 
   // Fetch tasks from ClickUp capture list (also warms up ClickUp connection)
   const tasks = await fetchCaptureTasks();
