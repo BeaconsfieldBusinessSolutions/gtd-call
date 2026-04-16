@@ -73,6 +73,7 @@ export async function fetchCaptureTasks(): Promise<ClickUpTask[]> {
   console.log(`[CLICKUP] Fetching tasks from list: ${CLICKUP_CAPTURE_LIST_ID}`);
   const res = await fetch(`${BASE}/list/${CLICKUP_CAPTURE_LIST_ID}/task?archived=false&subtasks=false`, {
     headers: headers(),
+    cache: "no-store",
   });
   if (!res.ok) throw new Error(`ClickUp fetch tasks failed: ${res.status}`);
   const data = await res.json();
@@ -130,6 +131,7 @@ export async function deleteTask(taskId: string): Promise<void> {
   const res = await fetch(`${BASE}/task/${taskId}`, {
     method: "DELETE",
     headers: headers(),
+    cache: "no-store",
   });
   if (!res.ok) throw new Error(`ClickUp delete failed: ${res.status}`);
 }
@@ -159,6 +161,7 @@ export async function getTaskComments(taskId: string): Promise<string[]> {
 export async function getTask(taskId: string): Promise<ClickUpTask> {
   const res = await fetch(`${BASE}/task/${taskId}`, {
     headers: headers(),
+    cache: "no-store",
   });
   if (!res.ok) throw new Error(`ClickUp get task failed: ${res.status}`);
   return res.json();
