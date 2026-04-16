@@ -35,14 +35,24 @@ export async function fetchTodayAgendaTasks(): Promise<ClickUpTask[]> {
     archived: "false",
     due_date_gt: String(startOfDay - 1),
     due_date_lt: String(endOfDay + 1),
+    order_by: "due_date",
+    subtasks: "false",
   });
 
-  const res = await fetch(`${BASE}/list/${CLICKUP_NEXT_ACTION_LIST_ID}/task?${params}`, {
-    headers: headers(),
-  });
-  if (!res.ok) throw new Error(`ClickUp fetch agenda tasks failed: ${res.status}`);
-  const data = await res.json();
-  return data.tasks;
+  // Paginate to collect all matching tasks
+  const allTasks: ClickUpTask[] = [];
+  let page = 0;
+  while (true) {
+    const res = await fetch(`${BASE}/list/${CLICKUP_NEXT_ACTION_LIST_ID}/task?${params}&page=${page}`, {
+      headers: headers(),
+    });
+    if (!res.ok) throw new Error(`ClickUp fetch agenda tasks failed: ${res.status}`);
+    const data = await res.json();
+    allTasks.push(...data.tasks);
+    if (data.tasks.length < 100) break; // last page
+    page++;
+  }
+  return allTasks;
 }
 
 export async function fetchCaptureTasks(): Promise<ClickUpTask[]> {
