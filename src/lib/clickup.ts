@@ -18,7 +18,7 @@ export interface ClickUpTask {
 }
 
 export async function fetchTodayAgendaTasks(): Promise<ClickUpTask[]> {
-  // Get today's date range in UK timezone
+  // Get today's date in UK timezone
   const now = new Date();
   const ukDate = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",
@@ -26,33 +26,47 @@ export async function fetchTodayAgendaTasks(): Promise<ClickUpTask[]> {
     month: "2-digit",
     day: "2-digit",
   }).format(now);
-  // ukDate = "DD/MM/YYYY" → parse to YYYY-MM-DD
-  const [day, month, year] = ukDate.split("/");
-  const startOfDay = new Date(`${year}-${month}-${day}T00:00:00+00:00`).getTime();
-  const endOfDay = new Date(`${year}-${month}-${day}T23:59:59+00:00`).getTime();
+  // ukDate = "DD/MM/YYYY"
+  const [dayStr, monthStr, yearStr] = ukDate.split("/");
+  const todayUk = `${yearStr}-${monthStr}-${dayStr}`; // YYYY-MM-DD
 
-  const params = new URLSearchParams({
-    archived: "false",
-    due_date_gt: String(startOfDay - 1),
-    due_date_lt: String(endOfDay + 1),
-    order_by: "due_date",
-    subtasks: "false",
-  });
+  // Use a wide date range (yesterday to tomorrow UTC) to capture today regardless of timezone
+  const startOfYesterday = new Date(`${yearStr}-${monthStr}-${dayStr}T00:00:00Z`).getTime() - 86400000;
+  const endOfTomorrow = new Date(`${yearStr}-${monthStr}-${dayStr}T23:59:59Z`).getTime() + 86400000;
 
-  // Paginate to collect all matching tasks
   const allTasks: ClickUpTask[] = [];
   let page = 0;
   while (true) {
-    const res = await fetch(`${BASE}/list/${CLICKUP_NEXT_ACTION_LIST_ID}/task?${params}&page=${page}`, {
+    const params = new URLSearchParams({
+      archived: "false",
+      subtasks: "false",
+      order_by: "due_date",
+      due_date_gt: String(startOfYesterday),
+      due_date_lt: String(endOfTomorrow),
+      page: String(page),
+    });
+    const res = await fetch(`${BASE}/list/${CLICKUP_NEXT_ACTION_LIST_ID}/task?${params}`, {
       headers: headers(),
     });
     if (!res.ok) throw new Error(`ClickUp fetch agenda tasks failed: ${res.status}`);
     const data = await res.json();
     allTasks.push(...data.tasks);
-    if (data.tasks.length < 100) break; // last page
+    if (data.tasks.length < 100) break;
     page++;
   }
-  return allTasks;
+
+  // Filter client-side: tasks due today in UK timezone
+  return allTasks.filter((t) => {
+    if (!t.due_date) return false;
+    const taskDate = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(parseInt(t.due_date)));
+    const [d, m, y] = taskDate.split("/");
+    return `${y}-${m}-${d}` === todayUk;
+  });
 }
 
 export async function fetchCaptureTasks(): Promise<ClickUpTask[]> {
