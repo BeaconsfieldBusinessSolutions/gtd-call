@@ -9,6 +9,19 @@ export async function GET(req: NextRequest) {
     const tasks = await fetchTodayAgendaTasks();
     const baseUrl = `https://${req.headers.get("host")}`;
     const taskNames = tasks.map((t) => t.name);
+
+    // Debug: return date info without triggering a call if ?debug=1
+    if (req.nextUrl.searchParams.get("debug")) {
+      const now = new Date();
+      const ukDate = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+      return NextResponse.json({
+        serverTime: now.toISOString(),
+        ukDate,
+        taskCount: tasks.length,
+        tasks: tasks.map((t) => ({ id: t.id, name: t.name, due_date: t.due_date })),
+      });
+    }
+
     const callSid = await initiateAgendaCall(baseUrl, taskNames);
 
     return NextResponse.json({
